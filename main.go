@@ -40,6 +40,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
+	"regexp"
 )
 
 const maxStaticLabels = 128
@@ -282,6 +283,27 @@ func processSource(nsCfg *config.NamespaceConfig, t tail.Follower, parser parser
 			fmt.Printf("error while parsing line '%s': %s\n", line, err)
 			metrics.ParseErrorsTotal.Inc()
 			continue
+		}
+
+		// Pull out the chain data
+		re := regexp.MustCompile("\"blockchain\":\"(?P<Chain>.*?)\"")
+		matches := re.FindStringSubmatch(fields["request_body"])
+		index := re.SubexpIndex("Chain")
+		fields["chain"] = "none"
+		fields["error_code"] = "none"
+		if len(matches) > 0 {
+			fields["chain"] = matches[index]
+		}	
+		// Pull out the Pocket error code
+		if (fields["status"] != "200") {
+			re := regexp.MustCompile("Codespace: pocketcore\\\\\\\\nCode:(?P<ErrorCode>.*?)\\\\")
+			matches := re.FindStringSubmatch(fields["response_body"])
+			index := re.SubexpIndex("ErrorCode")
+			if len(matches) > 0 {
+				fields["error_code"] = strings.Trim(matches[index], " ")
+			} else {
+				fields["error_code"] = "unknown"
+			}	
 		}
 
 		for i := range relabelings {

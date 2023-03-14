@@ -31,4 +31,16 @@ var DefaultRelabelings = []*Relabeling{
 			SourceValue: "status",
 		},
 	},
+	{
+		config.RelabelConfig{
+			TargetLabel: "chain",
+			SourceValue: "chain",
+		},
+	},
+	{
+		config.RelabelConfig{
+			TargetLabel: "error_code",
+			SourceValue: "error_code",
+		},
+	},
 }
