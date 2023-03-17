@@ -1,0 +1,18 @@
+listen:
+  port: 64000
+  address: "0.0.0.0"
+
+consul:
+  enable: false
+
+namespaces:
+  - name: nginx
+    format: "$host ~ $remote_addr ~ $remote_user ~ [$time_local] ~ $geo_country ~ $geo_location ~ \"$request\" ~ $status ~ $body_bytes_sent ~ rt=\"$request_time\" uct=\"$upstream_connect_time\" uht=\"$upstream_header_time\" urt=\"$upstream_response_time\" ~ \"$http_referer\" ~ \"$http_user_agent\" ~ req_body:$request_body~ resp_body:$response_body~"
+    source:
+      files:
+        - /var/log/nginx/pocket-node-access.log
+    labels:
+      service: "pocket"
+      environment: "production"
+    histogram_buckets: [.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10]
+

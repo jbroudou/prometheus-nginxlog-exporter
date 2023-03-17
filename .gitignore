@@ -2,3 +2,4 @@
 /prometheus-nginxlog-exporter
 /dist
 .history
+config.yaml

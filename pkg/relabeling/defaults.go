@@ -43,4 +43,16 @@ var DefaultRelabelings = []*Relabeling{
 			SourceValue: "error_code",
 		},
 	},
+	{
+		config.RelabelConfig{
+			TargetLabel: "country",
+			SourceValue: "geo_country",
+		},
+	},
+	// {
+	// 	config.RelabelConfig{
+	// 		TargetLabel: "location",
+	// 		SourceValue: "geo_location",
+	// 	},
+	// },
 }
