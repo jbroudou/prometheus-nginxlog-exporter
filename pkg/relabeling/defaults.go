@@ -49,10 +49,10 @@ var DefaultRelabelings = []*Relabeling{
 			SourceValue: "geo_country",
 		},
 	},
-	// {
-	// 	config.RelabelConfig{
-	// 		TargetLabel: "location",
-	// 		SourceValue: "geo_location",
-	// 	},
-	// },
+	{
+		config.RelabelConfig{
+			TargetLabel: "chain_method",
+			SourceValue: "chain_method",
+		},
+	},
 }

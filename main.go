@@ -290,15 +290,25 @@ func processSource(nsCfg *config.NamespaceConfig, t tail.Follower, parser parser
 		matches := re.FindStringSubmatch(fields["request_body"])
 		index := re.SubexpIndex("Chain")
 		fields["chain"] = "none"
+		fields["chain_method"] = "none"
 		fields["error_code"] = "none"
 		if len(matches) > 0 {
 			fields["chain"] = matches[index]
 		}	
+
+		// Pull out the blockchain method
+		re = regexp.MustCompile("\\\\\"method\\\\\":\\\\\"(?P<ChainMethod>.*?)\\\\\"")
+		matches = re.FindStringSubmatch(fields["request_body"])
+		index = re.SubexpIndex("ChainMethod")
+		if len(matches) > 0 {
+			fields["chain_method"] = matches[index]
+		}	
+		
 		// Pull out the Pocket error code
 		if (fields["status"] != "200") {
-			re := regexp.MustCompile("Codespace: pocketcore\\\\\\\\nCode:(?P<ErrorCode>.*?)\\\\")
-			matches := re.FindStringSubmatch(fields["response_body"])
-			index := re.SubexpIndex("ErrorCode")
+			re = regexp.MustCompile("Codespace: pocketcore\\\\\\\\nCode:(?P<ErrorCode>.*?)\\\\")
+			matches = re.FindStringSubmatch(fields["response_body"])
+			index = re.SubexpIndex("ErrorCode")
 			if len(matches) > 0 {
 				fields["error_code"] = strings.Trim(matches[index], " ")
 			} else {
