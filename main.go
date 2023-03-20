@@ -384,17 +384,17 @@ func processSource(nsCfg *config.NamespaceConfig, t tail.Follower, parser parser
 
 		if v, ok := observeMetrics(fields, "upstream_response_time", floatFromFieldsMulti, metrics.ParseErrorsTotal); ok {
 			metrics.UpstreamSeconds.WithLabelValues(notCounterValues...).Observe(v)
-			metrics.UpstreamSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
+			//metrics.UpstreamSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
 		}
 
 		if v, ok := observeMetrics(fields, "upstream_connect_time", floatFromFieldsMulti, metrics.ParseErrorsTotal); ok {
 			metrics.UpstreamConnectSeconds.WithLabelValues(notCounterValues...).Observe(v)
-			metrics.UpstreamConnectSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
+			//metrics.UpstreamConnectSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
 		}
 
 		if v, ok := observeMetrics(fields, "request_time", floatFromFields, metrics.ParseErrorsTotal); ok {
 			metrics.ResponseSeconds.WithLabelValues(notCounterValues...).Observe(v)
-			metrics.ResponseSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
+			//metrics.ResponseSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
 		}
 	}
 
