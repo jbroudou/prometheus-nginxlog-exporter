@@ -41,6 +41,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	"regexp"
+	"encoding/json"
+	"io/ioutil"
+	"net"
 )
 
 const maxStaticLabels = 128
@@ -255,6 +258,24 @@ func processNamespace(nsCfg *config.NamespaceConfig, metrics *metrics.Collection
 	return <-errs
 }
 
+func lookupAwsRegion(clientip string, prefixes []interface{}) string {
+	region := "none"
+	for _, s := range prefixes {
+		item := s.(map[string]interface{})
+		if item["service"] != "AMAZON" {
+			continue
+		}
+
+		_, subnet, _ := net.ParseCIDR(item["ip_prefix"].(string))
+		ip := net.ParseIP(clientip)
+		if subnet.Contains(ip) {
+			region = item["region"].(string)
+			break
+		}
+	}
+	return region
+}
+
 func processSource(nsCfg *config.NamespaceConfig, t tail.Follower, parser parser.Parser, metrics *metrics.Collection, hasCounterOnlyLabels bool) error {
 	relabelings := relabeling.NewRelabelings(nsCfg.RelabelConfigs)
 	relabelings = append(relabelings, relabeling.DefaultRelabelings...)
@@ -270,6 +291,24 @@ func processSource(nsCfg *config.NamespaceConfig, t tail.Follower, parser parser
 	}
 
 	labelValues := make([]string, totalLabelCount)
+
+
+	// Get AWS IP ranges (source: https://docs.aws.amazon.com/general/latest/gr/aws-ip-ranges.html)
+    jsonFile, err := os.Open("ip-ranges.json")
+    if err != nil {
+		return errors.Errorf("Json file error", err)
+    }
+    // defer the closing of our jsonFile so that we can parse it later on
+    defer jsonFile.Close()
+
+    byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return errors.Errorf("Json error", err)
+    }
+    var awsIpRanges map[string]interface{}
+    json.Unmarshal([]byte(byteValue), &awsIpRanges)
+	awsPrefixes := awsIpRanges["prefixes"].([]interface{})
+
 
 	copy(labelValues, staticLabelValues)
 
@@ -292,6 +331,7 @@ func processSource(nsCfg *config.NamespaceConfig, t tail.Follower, parser parser
 		fields["chain"] = "none"
 		fields["chain_method"] = "none"
 		fields["error_code"] = "none"
+		fields["aws_region"] = lookupAwsRegion(fields["remote_addr"], awsPrefixes)
 		if len(matches) > 0 {
 			fields["chain"] = matches[index]
 		}	
@@ -344,17 +384,17 @@ func processSource(nsCfg *config.NamespaceConfig, t tail.Follower, parser parser
 
 		if v, ok := observeMetrics(fields, "upstream_response_time", floatFromFieldsMulti, metrics.ParseErrorsTotal); ok {
 			metrics.UpstreamSeconds.WithLabelValues(notCounterValues...).Observe(v)
-			metrics.UpstreamSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
+			//metrics.UpstreamSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
 		}
 
 		if v, ok := observeMetrics(fields, "upstream_connect_time", floatFromFieldsMulti, metrics.ParseErrorsTotal); ok {
 			metrics.UpstreamConnectSeconds.WithLabelValues(notCounterValues...).Observe(v)
-			metrics.UpstreamConnectSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
+			//metrics.UpstreamConnectSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
 		}
 
 		if v, ok := observeMetrics(fields, "request_time", floatFromFields, metrics.ParseErrorsTotal); ok {
 			metrics.ResponseSeconds.WithLabelValues(notCounterValues...).Observe(v)
-			metrics.ResponseSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
+			//metrics.ResponseSecondsHist.WithLabelValues(notCounterValues...).Observe(v)
 		}
 	}
 

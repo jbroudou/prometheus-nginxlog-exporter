@@ -55,4 +55,10 @@ var DefaultRelabelings = []*Relabeling{
 			SourceValue: "chain_method",
 		},
 	},
+	{
+		config.RelabelConfig{
+			TargetLabel: "aws_region",
+			SourceValue: "aws_region",
+		},
+	},
 }
